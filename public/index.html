@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Store</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style> body { font-family: Arial; } .product { border: 1px solid #ccc; padding: 10px; margin: 10px; } </style>
+</head>
+<body>
+  <h1>Welcome to Your Store</h1>
+  <div id="products"></div>
+  <button onclick="checkout()">Checkout</button>
+  <script>
+    const stripe = Stripe('pk_test_your_test_publishable_key_here'); // Replace with your Stripe test publishable key
+    let cart = []; // Simple cart array
+
+    // Fetch and display products
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(products => {
+        const container = document.getElementById('products');
+        products.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'product';
+          div.innerHTML = `<h2>${p.name}</h2><p>${p.description}</p><p>$${p.price}</p><img src="${p.image}" width="100"><br>
+            <button onclick="addToCart(${p.id})">Add to Cart</button>`;
+          container.appendChild(div);
+        });
+      });
+
+    function addToCart(id) {
+      cart.push({ id, quantity: 1 }); // Basic; expand for multiples
+      alert('Added to cart!');
+    }
+
+    function checkout() {
+      if (cart.length === 0) return alert('Cart empty');
+      // For simplicity, checkout first item; expand for full cart
+      const item = cart[0];
+      fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: item.id, quantity: item.quantity, coupon: 'your_coupon_id' }) // Optional coupon
+      })
+      .then(res => res.json())
+      .then(session => stripe.redirectToCheckout({ sessionId: session.id }));
+    }
+  </script>
+</body>
+</html>
